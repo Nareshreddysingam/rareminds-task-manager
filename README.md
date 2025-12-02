@@ -1,9 +1,6 @@
-Here is your README cleaned, compact, no extra line gaps, perfect spacing, and GitHub-ready 👇
-Just copy–paste directly into README.md.
-
 📌 Rareminds Task Manager
 
-A real-world, full-stack collaborative task management system with manager–employee workflows, real-time updates, trash/archive, activity logs, authentication, RBAC, dark mode, and modern UI/UX.
+I Builded A real-world, full-stack collaborative task management system with manager–employee workflows, real-time updates, trash/archive, activity logs, authentication, RBAC, dark mode, and modern UI/UX.
 This project is built for Rareminds as a production-ready, fully functional system — not a demo or tutorial.
 
 🚀 Tech Stack
