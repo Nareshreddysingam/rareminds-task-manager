@@ -17,36 +17,47 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// SOCKET.IO (must match frontend domain)
+// ⭐ ALLOWED ORIGINS (ADD ALL YOUR VERCEL URLS HERE)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://rareminds-task-manager.vercel.app",
+  "https://rareminds-task-manager-811hfyy4f.vercel.app"  // PREVIEW DEPLOY
+];
+
+// ⭐ DYNAMIC CORS HANDLER
+const corsOptions = {
+  origin: function (origin, callback) {
+    // allow non-browser requests
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log("❌ BLOCKED ORIGIN:", origin);
+      callback(new Error("CORS Not Allowed: " + origin));
+    }
+  },
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true
+};
+
+// ⭐ GLOBAL CORS
+app.use(cors(corsOptions));
+app.use(helmet());
+app.use(morgan("dev"));
+app.use(express.json());
+
+// ⭐ DATABASE
+connectDB();
+
+// ⭐ SOCKET.IO
 const io = new SocketIOServer(server, {
   cors: {
-    origin: [
-      "http://localhost:5173",
-      "https://rareminds-task-manager.vercel.app"
-    ],
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
   }
 });
-
-// CONNECT DATABASE
-connectDB();
-
-// GLOBAL CORS MIDDLEWARE
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://rareminds-task-manager.vercel.app"
-    ],
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    credentials: true
-  })
-);
-
-app.use(helmet());
-app.use(morgan("dev"));
-app.use(express.json());
 
 // ROUTES
 app.use("/api/auth", authRoutes);
@@ -61,10 +72,10 @@ app.get("/", (req, res) => {
 
 // SOCKET EVENTS
 io.on("connection", (socket) => {
-  console.log("🔌 Client connected", socket.id);
+  console.log("🔌 Client connected:", socket.id);
 
   socket.on("disconnect", () => {
-    console.log("🔌 Client disconnected", socket.id);
+    console.log("🔌 Client disconnected:", socket.id);
   });
 });
 
