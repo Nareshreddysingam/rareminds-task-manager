@@ -17,7 +17,7 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// SOCKET.IO
+// SOCKET.IO (must match frontend domain)
 const io = new SocketIOServer(server, {
   cors: {
     origin: [
@@ -29,10 +29,10 @@ const io = new SocketIOServer(server, {
   }
 });
 
-// DATABASE
+// CONNECT DATABASE
 connectDB();
 
-// MIDDLEWARES
+// GLOBAL CORS MIDDLEWARE
 app.use(
   cors({
     origin: [
