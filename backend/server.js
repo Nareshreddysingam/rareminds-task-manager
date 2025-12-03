@@ -11,7 +11,7 @@ import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import createTaskRoutes from "./routes/taskRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
-import projectRoutes from "./routes/projectRoutes.js"; // <-- ONLY ONE
+import projectRoutes from "./routes/projectRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -20,8 +20,12 @@ const server = http.createServer(app);
 // SOCKET.IO
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE"]
+    origin: [
+      "http://localhost:5173",
+      "https://rareminds-task-manager.vercel.app"
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
   }
 });
 
@@ -31,10 +35,15 @@ connectDB();
 // MIDDLEWARES
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://rareminds-task-manager.vercel.app"
+    ],
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true
   })
 );
+
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(express.json());
