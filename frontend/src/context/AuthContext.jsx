@@ -9,67 +9,95 @@ export const AuthProvider = ({ children }) => {
     const stored = localStorage.getItem("ctm_user");
     return stored ? JSON.parse(stored) : null;
   });
+
   const [token, setToken] = useState(() => localStorage.getItem("ctm_token"));
   const [loading, setLoading] = useState(false);
   const [socket, setSocket] = useState(null);
+
   const [dark, setDark] = useState(() => {
     return window.matchMedia &&
       window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
 
   useEffect(() => {
-    if (dark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    if (dark) document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
   }, [dark]);
 
+  // SOCKET.IO CONNECTION (FIXED)
   useEffect(() => {
-    if (token) {
-      const s = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:4000");
-      setSocket(s);
-      return () => s.disconnect();
-    }
+    if (!token) return;
+
+    console.log("🔌 Connecting socket to:", import.meta.env.VITE_SOCKET_URL);
+
+    const s = io(import.meta.env.VITE_SOCKET_URL, {
+      transports: ["websocket"],
+      withCredentials: true,
+    });
+
+    s.on("connect", () => {
+      console.log("✅ Socket connected:", s.id);
+    });
+
+    setSocket(s);
+
+    return () => {
+      console.log("🔌 Disconnecting socket");
+      s.disconnect();
+    };
   }, [token]);
 
+  // LOGIN
   const login = async (email, password) => {
     setLoading(true);
     try {
       const { data } = await api.post("/auth/login", { email, password });
       setUser(data.user);
       setToken(data.token);
+
       localStorage.setItem("ctm_user", JSON.stringify(data.user));
       localStorage.setItem("ctm_token", data.token);
+
       return { success: true };
     } catch (err) {
-      return { success: false, message: err.response?.data?.message || err.message };
+      return {
+        success: false,
+        message: err.response?.data?.message || err.message,
+      };
     } finally {
       setLoading(false);
     }
   };
 
+  // SIGNUP
   const signup = async (payload) => {
     setLoading(true);
     try {
       const { data } = await api.post("/auth/signup", payload);
       setUser(data.user);
       setToken(data.token);
+
       localStorage.setItem("ctm_user", JSON.stringify(data.user));
       localStorage.setItem("ctm_token", data.token);
+
       return { success: true };
     } catch (err) {
-      return { success: false, message: err.response?.data?.message || err.message };
+      return {
+        success: false,
+        message: err.response?.data?.message || err.message,
+      };
     } finally {
       setLoading(false);
     }
   };
 
+  // LOGOUT
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("ctm_user");
     localStorage.removeItem("ctm_token");
+
     if (socket) socket.disconnect();
     setSocket(null);
   };
@@ -85,7 +113,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         socket,
         dark,
-        setDark
+        setDark,
       }}
     >
       {children}
