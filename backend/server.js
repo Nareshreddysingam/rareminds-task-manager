@@ -21,8 +21,16 @@ const server = http.createServer(app);
 const allowedOrigins = [
   "http://localhost:5173",
   "https://rareminds-task-manager.vercel.app",
-  "https://rareminds-task-manager-811hfyy4f.vercel.app"  // PREVIEW DEPLOY
+  "https://rareminds-task-manager-811hfyy4f.vercel.app",
+
+  // ⭐ ADD YOUR FRONTEND BUILD DOMAIN
+  "https://rareminds-task-manager.onrender.com",
+
+  // ⭐ ADD ALL DEV & DEPLOY ORIGINS (SAFE TO ADD)
+  "http://localhost:4000",
+  "https://*.onrender.com"
 ];
+
 
 // ⭐ DYNAMIC CORS HANDLER
 const corsOptions = {
