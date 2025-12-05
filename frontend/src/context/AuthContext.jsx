@@ -15,8 +15,10 @@ export const AuthProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   const [dark, setDark] = useState(() => {
-    return window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return (
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    );
   });
 
   useEffect(() => {
@@ -24,25 +26,30 @@ export const AuthProvider = ({ children }) => {
     else document.documentElement.classList.remove("dark");
   }, [dark]);
 
-  // SOCKET.IO CONNECTION (FIXED)
+  // 🔥 SOCKET.IO CONNECTION (FINAL FIX)
   useEffect(() => {
     if (!token) return;
 
-    console.log("🔌 Connecting socket to:", import.meta.env.VITE_SOCKET_URL);
+    const socketURL = import.meta.env.VITE_SOCKET_URL;
+    console.log("🔌 Connecting socket to:", socketURL);
 
-    const s = io(import.meta.env.VITE_SOCKET_URL, {
+    const s = io(socketURL, {
       transports: ["websocket"],
-      withCredentials: true,
+      withCredentials: false,
     });
 
     s.on("connect", () => {
       console.log("✅ Socket connected:", s.id);
     });
 
+    s.on("disconnect", () => {
+      console.log("❌ Socket disconnected");
+    });
+
     setSocket(s);
 
     return () => {
-      console.log("🔌 Disconnecting socket");
+      console.log("🔌 Disconnecting socket instance");
       s.disconnect();
     };
   }, [token]);
@@ -52,6 +59,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const { data } = await api.post("/auth/login", { email, password });
+
       setUser(data.user);
       setToken(data.token);
 
@@ -74,6 +82,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const { data } = await api.post("/auth/signup", payload);
+
       setUser(data.user);
       setToken(data.token);
 
