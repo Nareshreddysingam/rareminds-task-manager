@@ -17,39 +17,35 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// ⭐ ALLOWED ORIGINS (ADD ALL YOUR VERCEL URLS HERE)
+// ⭐ IMPORTANT → YOUR VERCEL FRONTEND URL
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://rareminds-task-manager.vercel.app",
-  "https://rareminds-task-manager-811hfyy4f.vercel.app",
 
-  // ⭐ ADD YOUR FRONTEND BUILD DOMAIN
-  "https://rareminds-task-manager.onrender.com",
+  // ⭐ Frontend on Vercel
+  "https://rareminds-task-manager-326tf1lj6.vercel.app",
 
-  // ⭐ ADD ALL DEV & DEPLOY ORIGINS (SAFE TO ADD)
-  "http://localhost:4000",
-  "https://*.onrender.com"
+  // ⭐ Optional extra vercel preview domains
+  "https://*.vercel.app",
+  "https://vercel.app",
+
+  // ⭐ Backend allowed (Render)
+  "https://rareminds-task-manager.onrender.com"
 ];
-
 
 // ⭐ DYNAMIC CORS HANDLER
 const corsOptions = {
   origin: function (origin, callback) {
-    // allow non-browser requests
     if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log("❌ BLOCKED ORIGIN:", origin);
-      callback(new Error("CORS Not Allowed: " + origin));
+    if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+      return callback(null, true);
     }
+    console.log("❌ BLOCKED ORIGIN:", origin);
+    return callback(new Error("CORS Not Allowed: " + origin));
   },
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true
 };
 
-// ⭐ GLOBAL CORS
 app.use(cors(corsOptions));
 app.use(helmet());
 app.use(morgan("dev"));
@@ -58,11 +54,11 @@ app.use(express.json());
 // ⭐ DATABASE
 connectDB();
 
-// ⭐ SOCKET.IO
+// ⭐ SOCKET.IO with correct CORS
 const io = new SocketIOServer(server, {
   cors: {
     origin: allowedOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST"],
     credentials: true
   }
 });
