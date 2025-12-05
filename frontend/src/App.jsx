@@ -10,6 +10,7 @@ import ActivityLogPage from "./pages/ActivityLogPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import Projects from "./pages/Projects";
+import TrashPage from "./pages/TrashPage";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         <BrowserRouter>
           <Navbar />
           <Routes>
+            {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
 
@@ -31,7 +33,7 @@ export default function App() {
               }
             />
 
-            {/* PROJECTS PAGE (Manager + Users both can view) */}
+            {/* Projects */}
             <Route
               path="/projects"
               element={
@@ -61,6 +63,17 @@ export default function App() {
               }
             />
 
+            {/* ⭐ NEW: Trash Page */}
+            <Route
+              path="/trash"
+              element={
+                <ProtectedRoute>
+                  <TrashPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Fallback */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </BrowserRouter>

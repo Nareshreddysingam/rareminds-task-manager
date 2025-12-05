@@ -14,6 +14,17 @@ const projectSchema = new mongoose.Schema(
       type: String,
       enum: ["active", "on_hold", "completed"],
       default: "active"
+    },
+
+    // 🔹 Trash support
+    isTrashed: {
+      type: Boolean,
+      default: false
+    },
+    trashedAt: Date,
+    trashedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
     }
   },
   { timestamps: true }

@@ -29,23 +29,31 @@ export default function TaskManagement() {
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
+  // ----------------------------
+  //   IMPORTANT FIX HERE
+  // ----------------------------
   useEffect(() => {
+    if (!user) return; // wait until user loads
+
     fetchMyTasks();
 
     if (user.role === "manager") {
       api.get("/auth/users").then(({ data }) => setUsers(data));
       api.get("/projects").then(({ data }) => setProjects(data));
     }
-  }, []);
+  }, [user]); // run again when user becomes available
 
   const createTask = async (e) => {
     e.preventDefault();
+
     if (!form.title || !form.assignedTo) {
       setError("Title and assignee are required");
       return;
     }
+
     setError("");
     setCreating(true);
+
     try {
       await api.post("/tasks", form);
       await fetchMyTasks();
@@ -72,13 +80,16 @@ export default function TaskManagement() {
     }
   };
 
+  // Prevent crash if tasks = undefined
+  const safeTasks = tasks || [];
+
   const columns = {
-    todo: { title: "To Do", items: tasks.filter((t) => t.status === "todo") },
+    todo: { title: "To Do", items: safeTasks.filter((t) => t.status === "todo") },
     in_progress: {
       title: "In Progress",
-      items: tasks.filter((t) => t.status === "in_progress")
+      items: safeTasks.filter((t) => t.status === "in_progress")
     },
-    done: { title: "Done", items: tasks.filter((t) => t.status === "done") }
+    done: { title: "Done", items: safeTasks.filter((t) => t.status === "done") }
   };
 
   const onDragEnd = async (result) => {
@@ -89,6 +100,8 @@ export default function TaskManagement() {
     const newStatus = destination.droppableId;
     await updateStatus(draggableId, newStatus);
   };
+
+  if (!user) return <div className="text-center text-white p-6">Loading...</div>;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
@@ -101,7 +114,7 @@ export default function TaskManagement() {
         </div>
       </div>
 
-      {/* --- MANAGER ONLY: CREATE TASK --- */}
+      {/* Manager: Create Task */}
       {user.role === "manager" && (
         <section className="card p-4">
           <h2 className="text-sm font-semibold mb-3">Create new task</h2>
@@ -111,7 +124,6 @@ export default function TaskManagement() {
             onSubmit={createTask}
             className="grid md:grid-cols-4 gap-3 text-xs"
           >
-            {/* Title */}
             <div className="md:col-span-2">
               <label className="font-medium">Title</label>
               <input
@@ -122,7 +134,6 @@ export default function TaskManagement() {
               />
             </div>
 
-            {/* Description */}
             <div className="md:col-span-2">
               <label className="font-medium">Description</label>
               <input
@@ -133,7 +144,6 @@ export default function TaskManagement() {
               />
             </div>
 
-            {/* Project Dropdown */}
             <div>
               <label className="font-medium">Project</label>
               <select
@@ -151,7 +161,6 @@ export default function TaskManagement() {
               </select>
             </div>
 
-            {/* Assign User Dropdown */}
             <div>
               <label className="font-medium">Assign to</label>
               <select
@@ -169,7 +178,6 @@ export default function TaskManagement() {
               </select>
             </div>
 
-            {/* Priority */}
             <div>
               <label className="font-medium">Priority</label>
               <select
@@ -184,7 +192,6 @@ export default function TaskManagement() {
               </select>
             </div>
 
-            {/* Button */}
             <div className="md:col-span-4 flex justify-end">
               <button
                 disabled={creating}
@@ -197,7 +204,7 @@ export default function TaskManagement() {
         </section>
       )}
 
-      {/* KANBAN BOARD */}
+      {/* Kanban Board */}
       <section className="grid md:grid-cols-3 gap-4">
         <DragDropContext onDragEnd={onDragEnd}>
           {Object.entries(columns).map(([key, col]) => (

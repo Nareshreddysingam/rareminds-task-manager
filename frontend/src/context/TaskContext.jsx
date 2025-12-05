@@ -8,13 +8,15 @@ const initialState = {
   tasks: [],
   page: 1,
   totalPages: 1,
-  loading: false
+  loading: false,
+  hasNew: false   // ⭐ NEW
 };
 
 const reducer = (state, action) => {
   switch (action.type) {
     case "SET_LOADING":
       return { ...state, loading: action.payload };
+
     case "SET_TASKS":
       return {
         ...state,
@@ -22,6 +24,7 @@ const reducer = (state, action) => {
         page: action.payload.page,
         totalPages: action.payload.totalPages
       };
+
     case "UPSERT_TASK":
       const exists = state.tasks.find((t) => t._id === action.payload._id);
       if (exists) {
@@ -33,11 +36,21 @@ const reducer = (state, action) => {
         };
       }
       return { ...state, tasks: [action.payload, ...state.tasks] };
+
     case "DELETE_TASK":
       return {
         ...state,
         tasks: state.tasks.filter((t) => t._id !== action.payload)
       };
+
+    // ⭐ NEW: show green notification dot
+    case "NEW_TASK_ALERT":
+      return { ...state, hasNew: true };
+
+    // ⭐ NEW: remove dot
+    case "CLEAR_ALERT":
+      return { ...state, hasNew: false };
+
     default:
       return state;
   }
@@ -45,7 +58,7 @@ const reducer = (state, action) => {
 
 export const TaskProvider = ({ children }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { socket } = useAuth();
+  const { socket, user } = useAuth();
 
   const fetchMyTasks = async (page = 1) => {
     dispatch({ type: "SET_LOADING", payload: true });
@@ -66,30 +79,37 @@ export const TaskProvider = ({ children }) => {
     }
   };
 
+  // ⭐ SOCKET EVENTS
   useEffect(() => {
     if (!socket) return;
 
-    const onUpdated = (task) => {
+    socket.on("task_updated", (task) => {
       dispatch({ type: "UPSERT_TASK", payload: task });
-    };
-    const onDeleted = ({ id }) => {
-      dispatch({ type: "DELETE_TASK", payload: id });
-    };
 
-    socket.on("task_updated", onUpdated);
-    socket.on("task_deleted", onDeleted);
+      // user gets new task → show green indicator
+      if (task.assignedTo?._id === user?._id) {
+        dispatch({ type: "NEW_TASK_ALERT" });
+      }
+    });
+
+    socket.on("task_deleted", ({ id }) => {
+      dispatch({ type: "DELETE_TASK", payload: id });
+    });
 
     return () => {
-      socket.off("task_updated", onUpdated);
-      socket.off("task_deleted", onDeleted);
+      socket.off("task_updated");
+      socket.off("task_deleted");
     };
-  }, [socket]);
+  }, [socket, user]);
 
   return (
     <TaskContext.Provider
       value={{
         ...state,
-        fetchMyTasks
+        fetchMyTasks,
+
+        // ⭐ allow navbar to clear indicator
+        markNotificationsRead: () => dispatch({ type: "CLEAR_ALERT" })
       }}
     >
       {children}
