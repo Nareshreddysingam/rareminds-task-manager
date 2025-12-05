@@ -17,64 +17,74 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// ⭐ IMPORTANT → YOUR VERCEL FRONTEND URL
+// ⭐ ALL ALLOWED ORIGINS (STABLE + CLEAN)
 const allowedOrigins = [
   "http://localhost:5173",
 
-  // ⭐ Frontend on Vercel
+  // Your Vercel main deploy
   "https://rareminds-task-manager-326tf1lj6.vercel.app",
 
-  // ⭐ Optional extra vercel preview domains
-  "https://*.vercel.app",
-  "https://vercel.app",
+  // Any Vercel preview domain
+  /^https:\/\/.*\.vercel\.app$/,
 
-  // ⭐ Backend allowed (Render)
+  // Backend domain (Render)
   "https://rareminds-task-manager.onrender.com"
 ];
 
-// ⭐ DYNAMIC CORS HANDLER
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
-      return callback(null, true);
-    }
-    console.log("❌ BLOCKED ORIGIN:", origin);
-    return callback(new Error("CORS Not Allowed: " + origin));
-  },
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true
-};
+// ⭐ GLOBAL CORS
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
 
-app.use(cors(corsOptions));
+      // allow exact matches
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      // allow *.vercel.app
+      if (/^https:\/\/.*\.vercel\.app$/.test(origin)) return callback(null, true);
+
+      console.log("❌ BLOCKED ORIGIN:", origin);
+      return callback(new Error("CORS not allowed for: " + origin));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  })
+);
+
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(express.json());
 
-// ⭐ DATABASE
+// ⭐ CONNECT DATABASE
 connectDB();
 
-// ⭐ SOCKET.IO with correct CORS
+// ⭐ SOCKET.IO (GLOBAL CORS)
 const io = new SocketIOServer(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (/^https:\/\/.*\.vercel\.app$/.test(origin)) return callback(null, true);
+
+      return callback("CORS blocked: " + origin, false);
+    },
+    credentials: true,
     methods: ["GET", "POST"],
-    credentials: true
   }
 });
 
-// ROUTES
+// ⭐ API ROUTES (CORRECT PREFIX)
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", createTaskRoutes(io));
 app.use("/api/activity", activityRoutes);
 app.use("/api/projects", projectRoutes);
 
-// HEALTH CHECK
+// ⭐ HEALTH CHECK
 app.get("/", (req, res) => {
   res.send("Collaborative Task Manager API is running");
 });
 
-// SOCKET EVENTS
+// ⭐ SOCKET EVENTS
 io.on("connection", (socket) => {
   console.log("🔌 Client connected:", socket.id);
 
@@ -83,7 +93,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// START SERVER
+// ⭐ START SERVER
 const PORT = process.env.PORT || 4000;
 
 server.listen(PORT, () => {
