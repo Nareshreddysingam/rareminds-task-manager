@@ -14,42 +14,34 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [socket, setSocket] = useState(null);
 
-  const [dark, setDark] = useState(() => {
-    return (
-      window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-    );
-  });
+  const [dark, setDark] = useState(() =>
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
 
   useEffect(() => {
     if (dark) document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
   }, [dark]);
 
-  // 🔥 SOCKET.IO CONNECTION (FINAL FIX)
+  // SOCKET.IO — Production Safe
   useEffect(() => {
     if (!token) return;
 
-    const socketURL = import.meta.env.VITE_SOCKET_URL;
-    console.log("🔌 Connecting socket to:", socketURL);
+    const URL = import.meta.env.VITE_SOCKET_URL;
 
-    const s = io(socketURL, {
+    console.log("🔌 Connecting socket:", URL);
+
+    const s = io(URL, {
       transports: ["websocket"],
       withCredentials: false,
     });
 
-    s.on("connect", () => {
-      console.log("✅ Socket connected:", s.id);
-    });
-
-    s.on("disconnect", () => {
-      console.log("❌ Socket disconnected");
-    });
+    s.on("connect", () => console.log("✅ Socket connected:", s.id));
+    s.on("disconnect", () => console.log("❌ Socket disconnected"));
 
     setSocket(s);
 
     return () => {
-      console.log("🔌 Disconnecting socket instance");
       s.disconnect();
     };
   }, [token]);

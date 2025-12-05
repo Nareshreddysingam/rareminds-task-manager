@@ -1,15 +1,15 @@
 import axios from "axios";
 
-// Backend API base URL
+// Base API URL = https://your-server.com/api
 const api = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL,
+  withCredentials: false,
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: false,
 });
 
-// Automatically attach Authorization token
+// Attach token automatically
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("ctm_token");
   if (token) {
